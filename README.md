@@ -2,7 +2,7 @@
 
 A tiny program to scrape ingatlan.com to get notified of new properties in the first place.
 
-I use Gotify for notifications
+I use [Gotify](https://github.com/gotify/server) for notifications
 
 ### How to run it
 
