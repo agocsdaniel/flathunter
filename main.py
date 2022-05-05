@@ -17,9 +17,14 @@ GOTIFY_TOKEN = os.environ.get('GOTIFY_TOKEN')
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-config = shelve.open(filename='config')
-if 'seen' not in config:
-    config['seen'] = {}
+if os.path.exists('config/config.db'):
+    config = shelve.open(filename='config/config.db')
+    if 'seen' not in config:
+        config['seen'] = {}
+elif os.path.exists('config/config.json'):
+    config = shelve.open(filename='config/config.db')
+    with open('config/config.json', 'r') as f:
+        config["seen"] = json.load(f)
 
 
 def scrape_new():
@@ -40,7 +45,7 @@ def scrape_new():
 
     ads_data = {}
     count = 0
-    unseen_ads = [ad for ad in ads if ad not in config['seen']]
+    unseen_ads = [str(ad) for ad in ads if str(ad) not in config['seen']]
     for ad in unseen_ads:
         doc = requests.get('https://ingatlan.com/' + str(ad), headers=headers).content
         doc = BeautifulSoup(doc, 'html.parser')
@@ -52,7 +57,7 @@ def scrape_new():
         data['price_pretty'] = misc_infos[0].split('\n')[0]
         ads_data[ad] = data
         count += 1
-        logging.info(f'Loaded ad {str(ad)}, {str(count)} of {str(len(unseen_ads))}')
+        logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
 
     return ads_data
 

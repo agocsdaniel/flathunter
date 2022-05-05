@@ -1,0 +1,9 @@
+version: "3.7"
+
+services:
+  flathunter:
+    build: ./
+    image: flathunter:latest
+    volumes:
+      - ./config:/app/config
+    env_file: .env
