@@ -12,3 +12,8 @@ I use [Gotify](https://github.com/gotify/server) for notifications
 4. Start main.py
 
 Or you can use Docker, too. In this case the fourth step will be `docker-compose up`
+
+### Final notes
+
+Please do not abuse ingatlan.com with this script!
+(For example: scraping within just seconds.)

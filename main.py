@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 import requests
 import shelve
 import os
@@ -7,13 +8,12 @@ import json
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 URL = os.environ.get('URL')
 GOTIFY_URL = os.environ.get('GOTIFY_URL')
 GOTIFY_TOKEN = os.environ.get('GOTIFY_TOKEN')
-
+SLEEP_INTERVAL = int(os.environ.get('SLEEP_INTERVAL') or 0)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -85,12 +85,25 @@ def notify(ad_data):
     requests.post(GOTIFY_URL + '/message', headers={'X-Gotify-Key': GOTIFY_TOKEN}, json=template)
 
 
-new_ads = scrape_new()
-for ad in new_ads:
-    notify(new_ads[ad])
-    conf: dict = config['seen']
-    conf[ad] = new_ads[ad]
-    config['seen'] = conf
+def main():
+    new_ads = scrape_new()
+    for ad in new_ads:
+        notify(new_ads[ad])
+        conf: dict = config['seen']
+        conf[ad] = new_ads[ad]
+        config['seen'] = conf
 
-config.sync()
-config.close()
+    config.sync()
+    config.close()
+
+
+if __name__ == '__main__':
+        while True:
+            logging.info('Scrape started')
+            main()
+            logging.info('Scrape finished')
+            if SLEEP_INTERVAL == 0:
+                break
+
+            logging.info(f'Waiting for {SLEEP_INTERVAL} seconds')
+            time.sleep(SLEEP_INTERVAL)
