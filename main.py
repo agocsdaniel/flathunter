@@ -55,6 +55,7 @@ def scrape_new():
         data['subtitle'] = titles[1].get_text()
         misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in doc.find_all(class_='listing-property')]
         data['price_pretty'] = misc_infos[0].split('\n')[0]
+        data['rooms_pretty'] = misc_infos[2].split('\n')[0]
         ads_data[ad] = data
         count += 1
         logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
@@ -77,7 +78,7 @@ def notify(ad_data):
                    f"#### "
                    f"{ad_data['price_pretty']}, "
                    f"{ad_data['property']['areaSize']} m2, "
-                   f"{ad_data['property']['roomCount']} szoba\n"
+                   f"{ad_data['rooms_pretty']} szoba\n"
                    f"![]({ad_data['photoUrl']})\n\n"
                    f"{ad_data['description']}",
         "title": ad_data['subtitle']
