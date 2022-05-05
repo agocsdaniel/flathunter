@@ -95,16 +95,17 @@ def main():
         config['seen'] = conf
 
     config.sync()
-    config.close()
 
 
 if __name__ == '__main__':
-        while True:
-            logging.info('Scrape started')
-            main()
-            logging.info('Scrape finished')
-            if SLEEP_INTERVAL == 0:
-                break
+    while True:
+        logging.info('Scrape started')
+        main()
+        logging.info('Scrape finished')
+        if SLEEP_INTERVAL == 0:
+            break
 
-            logging.info(f'Waiting for {SLEEP_INTERVAL} seconds')
-            time.sleep(SLEEP_INTERVAL)
+        logging.info(f'Waiting for {SLEEP_INTERVAL} seconds')
+        time.sleep(SLEEP_INTERVAL)
+
+    config.close()
