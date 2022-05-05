@@ -14,6 +14,7 @@ URL = os.environ.get('URL')
 GOTIFY_URL = os.environ.get('GOTIFY_URL')
 GOTIFY_TOKEN = os.environ.get('GOTIFY_TOKEN')
 SLEEP_INTERVAL = int(os.environ.get('SLEEP_INTERVAL') or 0)
+FIRST_RUN = json.loads(os.environ.get('FIRST_RUN').lower()) if os.environ.get('FIRST_RUN') is not None else False
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -25,30 +26,44 @@ elif os.path.exists('config/config.json'):
     config = shelve.open(filename='config/config.db')
     with open('config/config.json', 'r') as f:
         config["seen"] = json.load(f)
+else:
+    config = shelve.open(filename='config/config.db')
+    if 'seen' not in config:
+        config['seen'] = {}
 
 
 def scrape_new():
-    page = 1
+    page = 0
+    max_page = -1
     ads = []
-    while True:
+    while page < max_page or page == 0:
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0'
         }
-        doc = requests.get(URL + '?page=' + str(page), headers=headers).content.decode('utf-8').split('\n')
+        doc = requests.get(URL + '?page=' + str(page+1), headers=headers).content.decode('utf-8').split('\n')
         assert doc[1].strip().startswith('dataLayer')
         data = json.loads(doc[1].strip().split('(')[1].split(')')[0])
-        ads.extend(data['itemId'])
-        logging.info('Loaded page ' + str(page) + ' of ' + str(math.ceil(int(data['resultCount']) / data['numberOfItems'])))
-        page += 1
-        if page * data['numberOfItems'] > int(data['resultCount']):
+        if not data['numberOfItems']:
             break
+        elif max_page == -1:
+            max_page = math.ceil(int(data['resultCount']) / data['numberOfItems'])
+        ads.extend(data['itemId'])
+        page += 1
+        logging.info('Loaded page ' + str(page) + ' of ' + str(max_page))
 
     ads_data = {}
     count = 0
     unseen_ads = [str(ad) for ad in ads if str(ad) not in config['seen']]
+
+    if FIRST_RUN:
+        ads_data = {ad: {} for ad in unseen_ads}
+        return ads_data
+
     for ad in unseen_ads:
         doc = requests.get('https://ingatlan.com/' + str(ad), headers=headers).content
         doc = BeautifulSoup(doc, 'html.parser')
+        if not doc.find(id='listing'):
+            continue
         data = json.loads(doc.find(id='listing').attrs['data-listing'])
         titles = doc.find_all(class_='card-title')
         data['title'] = titles[0].get_text()
@@ -89,7 +104,8 @@ def notify(ad_data):
 def main():
     new_ads = scrape_new()
     for ad in new_ads:
-        notify(new_ads[ad])
+        if not FIRST_RUN:
+            notify(new_ads[ad])
         conf: dict = config['seen']
         conf[ad] = new_ads[ad]
         config['seen'] = conf
@@ -102,7 +118,7 @@ if __name__ == '__main__':
         logging.info('Scrape started')
         main()
         logging.info('Scrape finished')
-        if SLEEP_INTERVAL == 0:
+        if SLEEP_INTERVAL == 0 or FIRST_RUN:
             break
 
         logging.info(f'Waiting for {SLEEP_INTERVAL} seconds')

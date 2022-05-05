@@ -13,6 +13,8 @@ I use [Gotify](https://github.com/gotify/server) for notifications
 
 Or you can use Docker, too. In this case the fourth step will be `docker-compose up`
 
+For the first run you might define `FIRST_RUN=True` in the .env. Using this the script will not load all advertisements, only the search pages, and it saves the id-s, so you will not get notified for the existing ads. After a successful scrape, you restart the script with `FIRST_RUN=False`.
+
 ### Final notes
 
 Please do not abuse ingatlan.com with this script!
