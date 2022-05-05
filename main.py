@@ -36,12 +36,16 @@ def scrape_new():
     page = 0
     max_page = -1
     ads = []
+    ads_data = {}
+
     while page < max_page or page == 0:
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0'
         }
         doc = requests.get(URL + '?page=' + str(page+1), headers=headers).content.decode('utf-8').split('\n')
-        assert doc[1].strip().startswith('dataLayer')
+        if not doc[1].strip().startswith('dataLayer'):
+            logging.error('No JSON found, stopping scrape')
+            return ads_data
         data = json.loads(doc[1].strip().split('(')[1].split(')')[0])
         if not data['numberOfItems']:
             break
