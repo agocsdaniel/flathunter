@@ -15,7 +15,7 @@ if os.environ.get('URL'):
     URLS = [os.environ.get('URL')]
 elif os.path.exists('config/urls.txt'):
     with open('config/urls.txt', 'r') as f:
-        URLS = f.read().split('\n')
+        URLS = [x for x in f.read().split('\n') if x.startswith('https://ingatlan.com/lista/')]
 else:
     logging.error('No URLs defined')
     sys.exit(1)
