@@ -27,17 +27,14 @@ FIRST_RUN = json.loads(os.environ.get('FIRST_RUN').lower()) if os.environ.get('F
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-if os.path.exists('config/config.db'):
-    config = shelve.open(filename='config/config.db')
-    if 'seen' not in config:
-        config['seen'] = {}
-elif os.path.exists('config/config.json'):
-    config = shelve.open(filename='config/config.db')
-    with open('config/config.json', 'r') as f:
-        config["seen"] = json.load(f)
-else:
-    config = shelve.open(filename='config/config.db')
-    if 'seen' not in config:
+config = shelve.open(filename='config/config.db')
+if 'seen' not in config:
+    if os.path.exists('config/config.json'):
+        with open('config/config.json', 'r') as f:
+            conf: dict = config["seen"]
+            conf |= json.load(f)
+            config["seen"] = conf
+    else:
         config['seen'] = {}
 
 headers = {
@@ -121,13 +118,12 @@ def notify(ad_data):
 
 def main():
     new_ads = scrape_new()
+    conf: dict = config['seen']
     for ad in new_ads:
         if not FIRST_RUN:
             notify(new_ads[ad])
-        conf: dict = config['seen']
         conf[ad] = new_ads[ad]
-        config['seen'] = conf
-
+    config['seen'] = conf
     config.sync()
 
 
