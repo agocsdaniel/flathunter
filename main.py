@@ -41,6 +41,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0'
 }
 
+
 def scrape_new():
     ads = []
     ads_data = {}
@@ -118,10 +119,15 @@ def notify(ad_data):
 
 def main():
     new_ads = scrape_new()
+    new_ads_cnt = str(len(new_ads))
+    logging.info(f'Found {new_ads_cnt} new ads')
     conf: dict = config['seen']
+    i = 0
     for ad in new_ads:
         if not FIRST_RUN:
             notify(new_ads[ad])
+            i += 1
+            logging.info(f'Notified {ad}, {i} of {new_ads_cnt}')
         conf[ad] = new_ads[ad]
     config['seen'] = conf
     config.sync()
