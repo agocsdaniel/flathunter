@@ -1,5 +1,6 @@
 import logging
 import math
+import sys
 import time
 import requests
 import shelve
@@ -10,7 +11,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-URL = os.environ.get('URL')
+if os.environ.get('URL'):
+    URLS = [os.environ.get('URL')]
+elif os.path.exists('config/urls.txt'):
+    with open('config/urls.txt', 'r') as f:
+        URLS = f.read().split('\n')
+else:
+    logging.error('No URLs defined')
+    sys.exit(1)
+
 GOTIFY_URL = os.environ.get('GOTIFY_URL')
 GOTIFY_TOKEN = os.environ.get('GOTIFY_TOKEN')
 SLEEP_INTERVAL = int(os.environ.get('SLEEP_INTERVAL') or 0)
@@ -31,32 +40,37 @@ else:
     if 'seen' not in config:
         config['seen'] = {}
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0'
+}
 
 def scrape_new():
-    page = 0
-    max_page = -1
     ads = []
     ads_data = {}
+    url_no = 0
 
-    while page < max_page or page == 0:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0'
-        }
-        doc = requests.get(URL + '?page=' + str(page+1), headers=headers).content.decode('utf-8').split('\n')
-        if not doc[1].strip().startswith('dataLayer'):
-            logging.error('No JSON found, stopping scrape')
-            return ads_data
-        data = json.loads(doc[1].strip().split('(')[1].split(')')[0])
-        if not data['numberOfItems']:
-            break
-        elif max_page == -1:
-            max_page = math.ceil(int(data['resultCount']) / data['numberOfItems'])
-        ads.extend(data['itemId'])
-        page += 1
-        logging.info('Loaded page ' + str(page) + ' of ' + str(max_page))
+    for url in URLS:
+        page = 0
+        max_page = -1
+        url_no += 1
+
+        while page < max_page or page == 0:
+            doc = requests.get(url + '?page=' + str(page+1), headers=headers).content.decode('utf-8').split('\n')
+            if not doc[1].strip().startswith('dataLayer'):
+                logging.error('No JSON found, stopping scrape')
+                return ads_data
+            data = json.loads(doc[1].strip().split('(')[1].split(')')[0])
+            if not data['numberOfItems']:
+                break
+            elif max_page == -1:
+                max_page = math.ceil(int(data['resultCount']) / data['numberOfItems'])
+            ads.extend(data['itemId'])
+            page += 1
+            logging.info(f'Loaded page {str(page)} of {str(max_page)} at URL {str(url_no)} of {str(len(URLS))}')
 
     ads_data = {}
     count = 0
+    ads = list(set(ads))
     unseen_ads = [str(ad) for ad in ads if str(ad) not in config['seen']]
 
     if FIRST_RUN:

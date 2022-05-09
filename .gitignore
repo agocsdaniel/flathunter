@@ -1,5 +1,6 @@
 config.db
 config.json
+config/urls.txt
 .env
 venv
 __pycache__
