@@ -1,5 +1,6 @@
 import logging
 import math
+import re
 import sys
 import time
 import requests
@@ -78,15 +79,19 @@ def scrape_new():
     for ad in unseen_ads:
         doc = requests.get('https://ingatlan.com/' + str(ad), headers=headers).content
         doc = BeautifulSoup(doc, 'html.parser')
+
         if not doc.find(id='listing'):
             continue
+
         data = json.loads(doc.find(id='listing').attrs['data-listing'])
         titles = doc.find_all(class_='card-title')
         data['title'] = titles[0].get_text()
         data['subtitle'] = titles[1].get_text()
+
         misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in doc.find_all(class_='listing-property')]
         data['price_pretty'] = misc_infos[0].split('\n')[0]
         data['rooms_pretty'] = misc_infos[2].split('\n')[0]
+
         ads_data[ad] = data
         count += 1
         logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
@@ -95,6 +100,30 @@ def scrape_new():
 
 
 def notify(ad_data):
+    message = f"### " \
+              f"[{ad_data['title']}](https://ingatlan.com/{ad_data['id']})\n"
+
+    message += f"#### " \
+               f"{ad_data['price_pretty']}, " \
+               f"{ad_data['property']['areaSize']} m2, " \
+               f"{ad_data['rooms_pretty']} szoba\n"
+
+    if 'photoUrl' in ad_data and ad_data['photoUrl'] != '':
+        message += f"![]({ad_data['photoUrl']})\n\n"
+
+    message += f"{ad_data['description']}\n\n"
+
+    message += "##### \n"
+
+    if 'seller' in ad_data and 'name' in ad_data['seller']:
+        message += f"**👤 {ad_data['seller']['name']}"
+        if 'office' in ad_data['seller']:
+            message += f" ({ad_data['seller']['office']['name']})"
+        message += "**  \n"
+
+    if 'contactPhoneNumbers' in ad_data and 'numbers' in ad_data['contactPhoneNumbers'] and len(ad_data['contactPhoneNumbers']['numbers']) > 0:
+        message += f"**📱 [{ad_data['contactPhoneNumbers']['numbers'][0]}](tel:{ad_data['contactPhoneNumbers']['numbers'][0].replace(' ', '')})**"
+
     template = {
         "extras": {
             "client::display": {
@@ -105,13 +134,7 @@ def notify(ad_data):
                 "bigImageUrl": ad_data['photoUrl']
             }
         },
-        "message": f"### [{ad_data['title']}](https://ingatlan.com/{ad_data['id']})\n"
-                   f"#### "
-                   f"{ad_data['price_pretty']}, "
-                   f"{ad_data['property']['areaSize']} m2, "
-                   f"{ad_data['rooms_pretty']} szoba\n"
-                   f"![]({ad_data['photoUrl']})\n\n"
-                   f"{ad_data['description']}",
+        "message": message,
         "title": ad_data['subtitle']
     }
     requests.post(GOTIFY_URL + '/message', headers={'X-Gotify-Key': GOTIFY_TOKEN}, json=template)
