@@ -121,10 +121,10 @@ def notify(ad_data):
             message += f" ({ad_data['seller']['office']['name']})"
         message += "**  \n"
 
-    if 'contactPhoneNumbers' in ad_data:
-        if 'numbers' in ad_data['contactPhoneNumbers']:
-            if len(ad_data['contactPhoneNumbers']['numbers']) > 0:
-                message += f"**📱 [{ad_data['contactPhoneNumbers']['numbers'][0]}](tel:{ad_data['contactPhoneNumbers']['numbers'][0].replace(' ', '')})**"
+    try:
+        message += f"**📱 [{ad_data['contactPhoneNumbers']['numbers'][0]}](tel:{ad_data['contactPhoneNumbers']['numbers'][0].replace(' ', '')})**"
+    except:
+        pass
 
     template = {
         "extras": {
