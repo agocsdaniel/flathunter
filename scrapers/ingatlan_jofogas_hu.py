@@ -5,7 +5,7 @@ import json
 import re
 from sites import Site
 from bs4 import BeautifulSoup
-from config import default_headers, config, FIRST_RUN
+from config import default_headers, config, FIRST_RUN, DEBUG
 
 
 class Ingatlan_jofogas_hu:
@@ -53,9 +53,15 @@ class Ingatlan_jofogas_hu:
                 page += 1
                 logging.info(f'Loaded page {str(page)} of {str(max_page)} at URL {str(url_no)} of {str(len(self.url_list))}')
 
+                if DEBUG:
+                    break
+
         count = 0
         unseen_ads = [ad for (cls, ad) in ads if (self.__class__, ad) not in config['seen']]
         ads_data = {}
+
+        if DEBUG:
+            unseen_ads = unseen_ads[0:1]
 
         if FIRST_RUN:
             return ads

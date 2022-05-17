@@ -19,8 +19,9 @@ else:
 
 GOTIFY_URL = os.environ.get('GOTIFY_URL')
 GOTIFY_TOKEN = os.environ.get('GOTIFY_TOKEN')
-SLEEP_INTERVAL = int(os.environ.get('SLEEP_INTERVAL') or 0)
+SLEEP_INTERVAL = int(os.environ.get('SLEEP_INTERVAL', default=0))
 FIRST_RUN = json.loads(os.environ.get('FIRST_RUN').lower()) if os.environ.get('FIRST_RUN') is not None else False
+DEBUG = os.environ.get('GOTIFY_URL', default=False)
 
 config = shelve.open(filename='config/config.db')
 if 'seen' not in config:
