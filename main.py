@@ -1,6 +1,6 @@
 import logging
 import time
-from config import config, GOTIFY_URL, GOTIFY_TOKEN, FIRST_RUN, URLS, SLEEP_INTERVAL
+from configuration import config, GOTIFY_URL, GOTIFY_TOKEN, FIRST_RUN, URLS, SLEEP_INTERVAL
 from sites import Site
 from notifiers.gotify import Gotify
 import scrapers

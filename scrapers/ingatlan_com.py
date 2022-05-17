@@ -4,7 +4,7 @@ import requests
 import json
 from sites import Site
 from bs4 import BeautifulSoup
-from config import default_headers, config, FIRST_RUN
+from configuration import default_headers, config, FIRST_RUN
 
 
 class Ingatlan_com:

@@ -5,7 +5,7 @@ import json
 import re
 from sites import Site
 from bs4 import BeautifulSoup
-from config import default_headers, config, FIRST_RUN
+from configuration import default_headers, config, FIRST_RUN
 
 
 class Ingatlan_jofogas_hu:
@@ -51,12 +51,11 @@ class Ingatlan_jofogas_hu:
                     ad['region'] = region
                     ads[(self.__class__, ad['contentId'])] = ad
                 page += 1
-                logging.info(f'Loaded page {str(page)} of {str(max_page)} at URL {str(url_no)} of {str(len(self.url_list))}'),
-                break
+                logging.info(f'Loaded page {str(page)} of {str(max_page)} at URL {str(url_no)} of {str(len(self.url_list))}')
 
         count = 0
         ads_list = list(set(ads.keys()))
-        unseen_ads = [ad for (cls, ad) in ads if (self.__class__, ad) not in config['seen']][0:1]
+        unseen_ads = [ad for (cls, ad) in ads if (self.__class__, ad) not in config['seen']]
         ads_data = {}
 
         if FIRST_RUN:
