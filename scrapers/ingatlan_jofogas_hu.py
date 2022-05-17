@@ -54,7 +54,6 @@ class Ingatlan_jofogas_hu:
                 logging.info(f'Loaded page {str(page)} of {str(max_page)} at URL {str(url_no)} of {str(len(self.url_list))}')
 
         count = 0
-        ads_list = list(set(ads.keys()))
         unseen_ads = [ad for (cls, ad) in ads if (self.__class__, ad) not in config['seen']]
         ads_data = {}
 
@@ -70,9 +69,9 @@ class Ingatlan_jofogas_hu:
             ads_data[(self.__class__, ad)]["description"] = doc.find(property='og:description').attrs['content'][6:].lstrip(ads_data[(self.__class__, ad)]["title"])[2:]
             ads_data[(self.__class__, ad)]["photoUrl"] = doc.find(property='og:image').attrs['content']
             ads_data[(self.__class__, ad)]["url"] = doc.find(property='og:url').attrs['content']
-            ads_data[(self.__class__, ad)]["price"] = doc.find(class_="price-value").get_text(strip=True) + doc.find(class_="price-unit").get_text(strip=True)
-            ads_data[(self.__class__, ad)]["rooms"] = doc.find(class_="rooms").get_text(strip=True)
-            ads_data[(self.__class__, ad)]["size"] = doc.find(class_="rePAP-size").find_next(class_="reParamValue").text
+            ads_data[(self.__class__, ad)]["price"] = doc.find(class_="price-value").get_text(strip=True) + ' ' + doc.find(class_="price-unit").get_text(strip=True)
+            ads_data[(self.__class__, ad)]["rooms"] = doc.find(class_="rooms").get_text(strip=True).rstrip(' szoba')
+            ads_data[(self.__class__, ad)]["size"] = doc.find(class_="rePAP-size").find_next(class_="reParamValue").get_text(strip=True).rstrip(' m²')
             ads_data[(self.__class__, ad)]["address"] = (', '.join([x.strip() for x in doc.find(class_='vi_map_line').text.replace('\n', '').split('>')])).split('Cím: ')[1]
             ads_data[(self.__class__, ad)]["seller_name"] = re.search('.*\\\'name\\\': \\\'(.*?)\\\'.*', [x.get_text(strip=True) for x in doc.find_all('script') if 'advertiser' in x.get_text()][0]).group(1)
 

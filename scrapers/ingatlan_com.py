@@ -60,7 +60,7 @@ class Ingatlan_com:
             if not doc.find(id='listing'):
                 continue
 
-            data = ads_data[(self.__class__, ad)]
+            data = {}
             data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
             titles = doc.find_all(class_='card-title')
             data['address'] = titles[0].get_text()
@@ -72,6 +72,8 @@ class Ingatlan_com:
             data['rooms'] = misc_infos[2].split('\n')[0]
 
             data['size'] = data['internal_data']['property']['areaSize']
+            data['description'] = data['internal_data']['description']
+            data['photoUrl'] = data['internal_data']['photoUrl']
 
             if 'seller' in data and 'name' in data['seller']:
                 data['seller_name'] = data['internal_data']['seller']['name']
