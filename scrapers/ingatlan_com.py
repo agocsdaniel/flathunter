@@ -22,7 +22,7 @@ class Ingatlan_com:
     def add_url(self, url):
         self.url_list.append(url)
 
-    def scrape(self, notifier_callback=None):
+    def scrape(self, notifier_callback=None, mark_seen_callback=None):
         ads = []
         ads_data = {}
         url_no = 0
@@ -57,51 +57,53 @@ class Ingatlan_com:
         if DEBUG:
             unseen_ads = unseen_ads[0:1]
 
-        if FIRST_RUN:
-            ads_data = {(self.__class__.__name__, ad): {} for ad in unseen_ads}
-            return ads_data
-
         for ad in unseen_ads:
-            doc = requests.get('https://ingatlan.com/' + str(ad), headers=default_headers).content
-            doc = BeautifulSoup(doc, 'html.parser')
-
-            if not doc.find(id='listing'):
-                continue
-
             ad_data = {}
-            ad_data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
-            titles = doc.find_all(class_='card-title')
-            ad_data['address'] = titles[0].get_text()
-            ad_data['title'] = titles[1].get_text()
 
-            misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in
-                          doc.find_all(class_='listing-property')]
-            ad_data['price'] = misc_infos[0].split('\n')[0]
-            ad_data['rooms'] = misc_infos[2].split('\n')[0]
+            if not FIRST_RUN:
+                doc = requests.get('https://ingatlan.com/' + str(ad), headers=default_headers).content
+                doc = BeautifulSoup(doc, 'html.parser')
 
-            ad_data['size'] = ad_data['internal_data']['property']['areaSize']
-            ad_data['description'] = ad_data['internal_data']['description']
-            ad_data['photoUrl'] = ad_data['internal_data']['photoUrl']
+                if not doc.find(id='listing'):
+                    continue
 
-            if 'seller' in ad_data and 'name' in ad_data['seller']:
-                ad_data['seller_name'] = ad_data['internal_data']['seller']['name']
-                if 'office' in ad_data['internal_data']['seller']:
-                    ad_data['seller_name'] += f" ({ad_data['internal_data']['seller']['office']['name']})"
+                ad_data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
+                titles = doc.find_all(class_='card-title')
+                ad_data['address'] = titles[0].get_text()
+                ad_data['title'] = titles[1].get_text()
 
-            try:
-                ad_data['tel_number'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0].replace(' ', '')
-                ad_data['tel_number_pretty'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0]
-            except:
-                pass
+                misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in
+                              doc.find_all(class_='listing-property')]
+                ad_data['price'] = misc_infos[0].split('\n')[0]
+                ad_data['rooms'] = misc_infos[2].split('\n')[0]
 
-            ad_data['url'] = f'https://ingatlan.com/{ad_data["internal_data"]["id"]}'
+                ad_data['size'] = ad_data['internal_data']['property']['areaSize']
+                ad_data['description'] = ad_data['internal_data']['description']
+                ad_data['photoUrl'] = ad_data['internal_data']['photoUrl']
 
-            ads_data[(self.__class__.__name__, ad)] = ad_data
-            count += 1
-            logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
+                if 'seller' in ad_data and 'name' in ad_data['seller']:
+                    ad_data['seller_name'] = ad_data['internal_data']['seller']['name']
+                    if 'office' in ad_data['internal_data']['seller']:
+                        ad_data['seller_name'] += f" ({ad_data['internal_data']['seller']['office']['name']})"
 
-            if notifier_callback:
-                notifier_callback(ad_data, key=(self.__class__.__name__, ad))
+                try:
+                    ad_data['tel_number'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0].replace(' ', '')
+                    ad_data['tel_number_pretty'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0]
+                except:
+                    pass
+
+                ad_data['url'] = f'https://ingatlan.com/{ad_data["internal_data"]["id"]}'
+
+                ads_data[(self.__class__.__name__, ad)] = ad_data
+                count += 1
+                logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
+
+                if notifier_callback:
+                    if notifier_callback(ad_data, key=(self.__class__.__name__, ad)):
+                        mark_seen_callback((self.__class__.__name__, ad), ad_data)
+
+            else:
+                mark_seen_callback((self.__class__.__name__, ad), ad_data)
 
         return ads_data
 

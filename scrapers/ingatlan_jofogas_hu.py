@@ -25,7 +25,7 @@ class Ingatlan_jofogas_hu:
     def add_url(self, url):
         self.url_list.append(url)
 
-    def scrape(self, notifier_callback=None):
+    def scrape(self, notifier_callback=None, mark_seen_callback=None):
         ads = {}
         url_no = 0
 
@@ -63,38 +63,40 @@ class Ingatlan_jofogas_hu:
         if DEBUG:
             unseen_ads = unseen_ads[0:1]
 
-        if FIRST_RUN:
-            return ads
-
         for ad in unseen_ads:
             ad_data = ads[(self.__class__.__name__, ad)]
-            doc = requests.get(f'https://ingatlan.jofogas.hu/{ads_data[(self.__class__, ad)]["region"]}/{ad}.htm', headers=default_headers).content
 
-            doc = BeautifulSoup(doc, 'html.parser')
-            ad_data["title"] = doc.find(property='og:title').attrs['content']
-            ad_data["description"] = doc.find(property='og:description').attrs['content'][6:].lstrip(ads_data[(self.__class__, ad)]["title"])[2:]
-            ad_data["photoUrl"] = doc.find(property='og:image').attrs['content']
-            ad_data["url"] = doc.find(property='og:url').attrs['content']
-            ad_data["price"] = doc.find(class_="price-value").get_text(strip=True) + ' ' + doc.find(class_="price-unit").get_text(strip=True)
-            ad_data["rooms"] = doc.find(class_="rooms").get_text(strip=True).rstrip(' szoba')
-            ad_data["size"] = doc.find(class_="size").get_text(strip=True).rstrip('m2')
-            ad_data["address"] = (', '.join([x.strip() for x in doc.find(class_='vi_map_line').text.replace('\n', '').split('>')])).split('Cím: ')[1]
-            ad_data["seller_name"] = re.search('.*\\\'name\\\': \\\'(.*?)\\\'.*', [x.get_text(strip=True) for x in doc.find_all('script') if 'advertiser' in x.get_text()][0]).group(1)
+            if not FIRST_RUN:
+                doc = requests.get(f'https://ingatlan.jofogas.hu/{ad_data["region"]}/{ad}.htm', headers=default_headers).content
 
-            tel_doc = requests.get('https://apiv2.jofogas.hu/v2/items/getPhone?list_id=' + ad, headers=self.api_headers).json()
-            if 'phone' in tel_doc:
-                ad_data["tel_number"] = tel_doc['phone']
-                ad_data["tel_number_pretty"] = tel_doc['phone']
+                doc = BeautifulSoup(doc, 'html.parser')
+                ad_data["title"] = doc.find(property='og:title').attrs['content']
+                ad_data["description"] = doc.find(property='og:description').attrs['content'][6:].lstrip(ad_data["title"])[2:]
+                ad_data["photoUrl"] = doc.find(property='og:image').attrs['content']
+                ad_data["url"] = doc.find(property='og:url').attrs['content']
+                ad_data["price"] = doc.find(class_="price-value").get_text(strip=True) + ' ' + doc.find(class_="price-unit").get_text(strip=True)
+                ad_data["rooms"] = doc.find(class_="rooms").get_text(strip=True).rstrip(' szoba')
+                ad_data["size"] = doc.find(class_="size").get_text(strip=True).rstrip('m2')
+                ad_data["address"] = (', '.join([x.strip() for x in doc.find(class_='vi_map_line').text.replace('\n', '').split('>')])).split('Cím: ')[1]
+                ad_data["seller_name"] = re.search('.*\\\'name\\\': \\\'(.*?)\\\'.*', [x.get_text(strip=True) for x in doc.find_all('script') if 'advertiser' in x.get_text()][0]).group(1)
+
+                tel_doc = requests.get('https://apiv2.jofogas.hu/v2/items/getPhone?list_id=' + ad, headers=self.api_headers).json()
+                if 'phone' in tel_doc:
+                    ad_data["tel_number"] = tel_doc['phone']
+                    ad_data["tel_number_pretty"] = tel_doc['phone']
+
+                count += 1
+                logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
+
+                if notifier_callback:
+                    if notifier_callback(ad_data, key=(self.__class__.__name__, ad)):
+                        mark_seen_callback((self.__class__.__name__, ad), ad_data)
+
             else:
-                print(tel_doc)
-
-            count += 1
-            logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
-
-            if notifier_callback:
-                notifier_callback(ad_data, key=(self.__class__.__name__, ad))
+                mark_seen_callback((self.__class__.__name__, ad), ad_data)
 
             ads_data[(self.__class__.__name__, ad)] = ad_data
+
         return ads_data
 
 

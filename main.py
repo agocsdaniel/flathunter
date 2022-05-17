@@ -13,10 +13,17 @@ for url in URLS:
 notifier = Gotify(GOTIFY_URL, GOTIFY_TOKEN)
 
 
+def mark_seen(key, ad_data):
+    conf: dict = config['seen']
+    conf[key] = ad_data
+    config['seen'] = conf
+    config.sync()
+
+
 def main():
     new_ads = {}
     for scraper in Site.sites:
-        new_ads |= (scraper.scrape(notifier_callback=notifier.notify))
+        new_ads |= (scraper.scrape(notifier_callback=notifier.notify, mark_seen_callback=mark_seen))
     new_ads_cnt = str(len(new_ads))
     logging.info(f'Found {new_ads_cnt} new ads')
 
