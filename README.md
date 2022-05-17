@@ -1,8 +1,13 @@
 # _FlatHunter_
 
-A tiny program to scrape ingatlan.com to get notified of new properties in the first place.
+A tiny program to scrape property rental sites to get notified of new properties in the first place.
 
 I use [Gotify](https://github.com/gotify/server) for notifications
+
+### Supported sites
+
+* [ingatlan.com](https://ingatlan.com)
+* [ingatlan.jofogas.hu](https://ingatlan.jofogas.hu)
 
 ### How to run it
 

@@ -60,15 +60,31 @@ class Ingatlan_com:
             if not doc.find(id='listing'):
                 continue
 
-            data = json.loads(doc.find(id='listing').attrs['data-listing'])
+            data = ads_data[(self.__class__, ad)]
+            data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
             titles = doc.find_all(class_='card-title')
-            data['title'] = titles[0].get_text()
-            data['subtitle'] = titles[1].get_text()
+            data['address'] = titles[0].get_text()
+            data['title'] = titles[1].get_text()
 
             misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in
                           doc.find_all(class_='listing-property')]
-            data['price_pretty'] = misc_infos[0].split('\n')[0]
-            data['rooms_pretty'] = misc_infos[2].split('\n')[0]
+            data['price'] = misc_infos[0].split('\n')[0]
+            data['rooms'] = misc_infos[2].split('\n')[0]
+
+            data['size'] = data['internal_data']['property']['areaSize']
+
+            if 'seller' in data and 'name' in data['seller']:
+                data['seller_name'] = data['internal_data']['seller']['name']
+                if 'office' in data['internal_data']['seller']:
+                    data['seller_name'] += f" ({data['internal_data']['seller']['office']['name']})"
+
+            try:
+                data['tel_number'] = data['internal_data']['contactPhoneNumbers']['numbers'][0].replace(' ', '')
+                data['tel_number_pretty'] = data['internal_data']['contactPhoneNumbers']['numbers'][0]
+            except:
+                pass
+
+            data['url'] = f'https://ingatlan.com/{data["internal_data"]["id"]}'
 
             ads_data[(self.__class__, ad)] = data
             count += 1

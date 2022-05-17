@@ -8,12 +8,12 @@ class Gotify:
 
     def notify(self, ad_data):
         message = f"### " \
-                  f"[{ad_data['title']}](https://ingatlan.com/{ad_data['id']})\n"
+                  f"[{ad_data['address']}]({ad_data['url']})\n"
 
         message += f"#### " \
-                   f"{ad_data['price_pretty']}, " \
-                   f"{ad_data['property']['areaSize']} m2, " \
-                   f"{ad_data['rooms_pretty']} szoba\n"
+                   f"{ad_data['price']}, " \
+                   f"{ad_data['size']} m², " \
+                   f"{ad_data['rooms']} szoba\n"
 
         if 'photoUrl' in ad_data and ad_data['photoUrl'] != '':
             message += f"![]({ad_data['photoUrl']})\n\n"
@@ -22,16 +22,11 @@ class Gotify:
 
         message += "##### \n"
 
-        if 'seller' in ad_data and 'name' in ad_data['seller']:
-            message += f"**👤 {ad_data['seller']['name']}"
-            if 'office' in ad_data['seller']:
-                message += f" ({ad_data['seller']['office']['name']})"
-            message += "**  \n"
+        if 'seller_name' in ad_data:
+            message += f"**👤 {ad_data['seller_name']}**  \n"
 
-        try:
-            message += f"**📱 [{ad_data['contactPhoneNumbers']['numbers'][0]}](tel:{ad_data['contactPhoneNumbers']['numbers'][0].replace(' ', '')})**"
-        except:
-            pass
+        if 'tel_number' in ad_data:
+            message += f"**📱 [{ad_data['tel_number_pretty']}](tel:{ad_data['tel_number']})**"
 
         template = {
             "extras": {
@@ -39,12 +34,12 @@ class Gotify:
                     "contentType": "text/markdown"
                 },
                 "client::notification": {
-                    "click": {"url": f"https://ingatlan.com/{ad_data['id']}"},
+                    "click": {"url": f"{ad_data['url']}"},
                     "bigImageUrl": ad_data['photoUrl']
                 }
             },
             "message": message,
-            "title": ad_data['subtitle']
+            "title": ad_data['title']
         }
         requests.post(self.url + '/message', headers={'X-Gotify-Key': self.token}, json=template)
 
