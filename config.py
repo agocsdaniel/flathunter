@@ -25,13 +25,7 @@ DEBUG = json.loads(os.environ.get('DEBUG').lower()) if os.environ.get('DEBUG') i
 
 config = shelve.open(filename='config/config.db')
 if 'seen' not in config:
-    if os.path.exists('config/config.json'):
-        with open('config/config.json', 'r') as f:
-            conf: dict = config["seen"]
-            conf |= json.load(f)
-            config["seen"] = conf
-    else:
-        config['seen'] = {}
+    config['seen'] = {}
 
 default_headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0'
