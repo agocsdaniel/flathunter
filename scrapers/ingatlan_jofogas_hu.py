@@ -5,7 +5,7 @@ import json
 import re
 from sites import Site
 from bs4 import BeautifulSoup
-from utils.configuration import default_headers, config, FIRST_RUN
+from config import default_headers, config, FIRST_RUN
 
 
 class Ingatlan_jofogas_hu:
