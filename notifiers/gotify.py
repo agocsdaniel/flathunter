@@ -1,4 +1,6 @@
 import requests
+import logging
+from config import config
 
 
 class Gotify:
@@ -6,7 +8,7 @@ class Gotify:
         self.url = url
         self.token = token
 
-    def notify(self, ad_data):
+    def notify(self, ad_data, key):
         message = f"### " \
                   f"[{ad_data['address']}]({ad_data['url']})\n"
 
@@ -42,5 +44,13 @@ class Gotify:
             "title": ad_data['title']
         }
         requests.post(self.url + '/message', headers={'X-Gotify-Key': self.token}, json=template)
+
+        _, ad = key
+        logging.info(f'Notified {ad}')
+
+        conf: dict = config['seen']
+        conf[key] = ad_data
+        config['seen'] = conf
+        config.sync()
 
         return True

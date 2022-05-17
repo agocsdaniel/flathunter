@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 from config import default_headers, config, FIRST_RUN, DEBUG
 
 
+__name__ = 'Ingatlan.com'
+
 class Ingatlan_com:
     def __init__(self, url_list=None):
         if url_list is None:
@@ -20,7 +22,7 @@ class Ingatlan_com:
     def add_url(self, url):
         self.url_list.append(url)
 
-    def scrape(self):
+    def scrape(self, notifier_callback=None):
         ads = []
         ads_data = {}
         url_no = 0
@@ -50,13 +52,13 @@ class Ingatlan_com:
         ads_data = {}
         count = 0
         ads = list(set(ads))
-        unseen_ads = [str(ad) for ad in ads if (self.__class__, str(ad)) not in config['seen']]
+        unseen_ads = [str(ad) for ad in ads if (self.__class__.__name__, str(ad)) not in config['seen']]
 
         if DEBUG:
             unseen_ads = unseen_ads[0:1]
 
         if FIRST_RUN:
-            ads_data = {(self.__class__, ad): {} for ad in unseen_ads}
+            ads_data = {(self.__class__.__name__, ad): {} for ad in unseen_ads}
             return ads_data
 
         for ad in unseen_ads:
@@ -66,37 +68,40 @@ class Ingatlan_com:
             if not doc.find(id='listing'):
                 continue
 
-            data = {}
-            data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
+            ad_data = {}
+            ad_data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
             titles = doc.find_all(class_='card-title')
-            data['address'] = titles[0].get_text()
-            data['title'] = titles[1].get_text()
+            ad_data['address'] = titles[0].get_text()
+            ad_data['title'] = titles[1].get_text()
 
             misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in
                           doc.find_all(class_='listing-property')]
-            data['price'] = misc_infos[0].split('\n')[0]
-            data['rooms'] = misc_infos[2].split('\n')[0]
+            ad_data['price'] = misc_infos[0].split('\n')[0]
+            ad_data['rooms'] = misc_infos[2].split('\n')[0]
 
-            data['size'] = data['internal_data']['property']['areaSize']
-            data['description'] = data['internal_data']['description']
-            data['photoUrl'] = data['internal_data']['photoUrl']
+            ad_data['size'] = ad_data['internal_data']['property']['areaSize']
+            ad_data['description'] = ad_data['internal_data']['description']
+            ad_data['photoUrl'] = ad_data['internal_data']['photoUrl']
 
-            if 'seller' in data and 'name' in data['seller']:
-                data['seller_name'] = data['internal_data']['seller']['name']
-                if 'office' in data['internal_data']['seller']:
-                    data['seller_name'] += f" ({data['internal_data']['seller']['office']['name']})"
+            if 'seller' in ad_data and 'name' in ad_data['seller']:
+                ad_data['seller_name'] = ad_data['internal_data']['seller']['name']
+                if 'office' in ad_data['internal_data']['seller']:
+                    ad_data['seller_name'] += f" ({ad_data['internal_data']['seller']['office']['name']})"
 
             try:
-                data['tel_number'] = data['internal_data']['contactPhoneNumbers']['numbers'][0].replace(' ', '')
-                data['tel_number_pretty'] = data['internal_data']['contactPhoneNumbers']['numbers'][0]
+                ad_data['tel_number'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0].replace(' ', '')
+                ad_data['tel_number_pretty'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0]
             except:
                 pass
 
-            data['url'] = f'https://ingatlan.com/{data["internal_data"]["id"]}'
+            ad_data['url'] = f'https://ingatlan.com/{ad_data["internal_data"]["id"]}'
 
-            ads_data[(self.__class__, ad)] = data
+            ads_data[(self.__class__.__name__, ad)] = ad_data
             count += 1
             logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')
+
+            if notifier_callback:
+                notifier_callback(ad_data, key=(self.__class__.__name__, ad))
 
         return ads_data
 

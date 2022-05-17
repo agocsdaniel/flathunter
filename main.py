@@ -16,20 +16,9 @@ notifier = Gotify(GOTIFY_URL, GOTIFY_TOKEN)
 def main():
     new_ads = {}
     for scraper in Site.sites:
-        new_ads |= (scraper.scrape())
+        new_ads |= (scraper.scrape(notifier_callback=notifier.notify))
     new_ads_cnt = str(len(new_ads))
     logging.info(f'Found {new_ads_cnt} new ads')
-    conf: dict = config['seen']
-    i = 0
-    for x in new_ads:
-        cls, ad = x
-        if not FIRST_RUN:
-            notifier.notify(new_ads[x])
-            i += 1
-            logging.info(f'Notified {ad}, {i} of {new_ads_cnt}')
-        conf[x] = new_ads[x]
-    config['seen'] = conf
-    config.sync()
 
 
 if __name__ == '__main__':
