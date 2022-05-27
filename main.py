@@ -1,5 +1,6 @@
 import logging
 import time
+import requests
 from config import config, GOTIFY_URL, GOTIFY_TOKEN, FIRST_RUN, URLS, SLEEP_INTERVAL
 from sites import Site
 from notifiers.gotify import Gotify
@@ -31,8 +32,14 @@ def main():
 if __name__ == '__main__':
     while True:
         logging.info('Scrape started')
-        main()
-        logging.info('Scrape finished')
+        try:
+            main()
+            logging.info('Scrape finished')
+        except requests.ConnectionError:
+            logging.exception('Network problems, scrape failed')
+        except Exception:
+            logging.exception('Unkonwn error, scrape failed')
+
         if SLEEP_INTERVAL == 0 or FIRST_RUN:
             break
 
