@@ -7,6 +7,7 @@ from sites import Site
 from scrapers.factory.property_site import PropertySite
 from bs4 import BeautifulSoup
 from config import default_headers, config, FIRST_RUN, DEBUG
+from model import Ad
 
 
 class Ingatlan_jofogas_hu(PropertySite):
@@ -59,26 +60,29 @@ class Ingatlan_jofogas_hu(PropertySite):
             unseen_ads = unseen_ads[0:1]
 
         for ad in unseen_ads:
-            ad_data = ads.get((self.__class__.__name__, ad))
+            ad_raw = ads.get((self.__class__.__name__, ad))
 
             if not FIRST_RUN:
-                doc = requests.get(f'https://ingatlan.jofogas.hu/{ad_data["region"]}/{ad}.htm', headers=default_headers).content
+                doc = requests.get(f'https://ingatlan.jofogas.hu/{ad_raw["region"]}/{ad}.htm', headers=default_headers).content
 
                 doc = BeautifulSoup(doc, 'html.parser')
-                ad_data["title"] = doc.find(property='og:title').attrs['content']
-                ad_data["description"] = doc.find(property='og:description').attrs['content'][6:].lstrip(ad_data["title"])[2:]
-                ad_data["photoUrl"] = doc.find(property='og:image').attrs['content']
-                ad_data["url"] = doc.find(property='og:url').attrs['content']
-                ad_data["price"] = doc.find(class_="price-value").get_text(strip=True) + ' ' + doc.find(class_="price-unit").get_text(strip=True)
-                ad_data["rooms"] = doc.find(class_="rooms").get_text(strip=True).rstrip(' szoba')
-                ad_data["size"] = doc.find(class_="size").get_text(strip=True).rstrip('m2')
-                ad_data["address"] = (', '.join([x.strip() for x in doc.find(class_='vi_map_line').text.replace('\n', '').split('>')])).split('Cím: ')[1]
-                ad_data["seller_name"] = re.search('.*\\\'name\\\': \\\'(.*?)\\\'.*', [x.get_text(strip=True) for x in doc.find_all('script') if 'advertiser' in x.get_text()][0]).group(1)
+                ad_data = Ad()
+                ad_data.internal_data = ad_raw
+                ad_data.title = doc.find(property='og:title').attrs['content']
+                ad_data.description = doc.find(property='og:description').attrs['content'][6:].lstrip(ad_data.title)[2:]
+                ad_data.photoUrl = doc.find(property='og:image').attrs['content']
+                ad_data.url = doc.find(property='og:url').attrs['content']
+                ad_data.price = doc.find(class_="price-value").get_text(strip=True)
+                ad_data.currency = doc.find(class_="price-unit").get_text(strip=True)
+                ad_data.rooms = doc.find(class_="rooms").get_text(strip=True).rstrip(' szoba')
+                ad_data.size = doc.find(class_="size").get_text(strip=True).rstrip('m2')
+                ad_data.address = (', '.join([x.strip() for x in doc.find(class_='vi_map_line').text.replace('\n', '').split('>')])).split('Cím: ')[1]
+                ad_data.seller_name = re.search('.*\\\'name\\\': \\\'(.*?)\\\'.*', [x.get_text(strip=True) for x in doc.find_all('script') if 'advertiser' in x.get_text()][0]).group(1)
 
                 tel_doc = requests.get('https://apiv2.jofogas.hu/v2/items/getPhone?list_id=' + ad, headers=self.api_headers).json()
                 if 'phone' in tel_doc:
-                    ad_data["tel_number"] = tel_doc['phone']
-                    ad_data["tel_number_pretty"] = tel_doc['phone']
+                    ad_data.tel_number = tel_doc['phone']
+                    ad_data.tel_number_pretty = tel_doc['phone']
 
                 count += 1
                 logging.info(f'Loaded ad {ad}, {str(count)} of {str(len(unseen_ads))}')

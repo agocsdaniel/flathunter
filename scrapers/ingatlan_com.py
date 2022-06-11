@@ -6,6 +6,7 @@ from sites import Site
 from scrapers.factory.property_site import PropertySite
 from bs4 import BeautifulSoup
 from config import default_headers, config, FIRST_RUN, DEBUG
+from model import Ad
 
 
 class Ingatlan_com(PropertySite):
@@ -49,7 +50,7 @@ class Ingatlan_com(PropertySite):
             unseen_ads = unseen_ads[0:1]
 
         for ad in unseen_ads:
-            ad_data = {}
+            ad_data = Ad()
 
             if not FIRST_RUN:
                 doc = requests.get('https://ingatlan.com/' + str(ad), headers=default_headers).content
@@ -58,32 +59,35 @@ class Ingatlan_com(PropertySite):
                 if not doc.find(id='listing'):
                     continue
 
-                ad_data['internal_data'] = json.loads(doc.find(id='listing').attrs['data-listing'])
+                ad_data.internal_data = json.loads(doc.find(id='listing').attrs['data-listing'])
                 titles = doc.find_all(class_='card-title')
-                ad_data['address'] = titles[0].get_text()
-                ad_data['title'] = titles[1].get_text()
+                ad_data.address = titles[0].get_text()
+                ad_data.title = titles[1].get_text()
 
                 misc_infos = [x.find_next('span').find_next('span').get_text().strip() for x in
                               doc.find_all(class_='listing-property')]
-                ad_data['price'] = misc_infos[0].split('\n')[0]
-                ad_data['rooms'] = misc_infos[2].split('\n')[0]
+                price = misc_infos[0].split('\n')[0].split(' ')
 
-                ad_data['size'] = ad_data['internal_data']['property']['areaSize']
-                ad_data['description'] = ad_data['internal_data']['description']
-                ad_data['photoUrl'] = ad_data['internal_data']['photoUrl']
+                ad_data.price = ' '.join(price[:-1])
+                ad_data.currency = price[-1]
+                ad_data.rooms = misc_infos[2].split('\n')[0]
 
-                if 'seller' in ad_data and 'name' in ad_data['seller']:
-                    ad_data['seller_name'] = ad_data['internal_data']['seller']['name']
-                    if 'office' in ad_data['internal_data']['seller']:
-                        ad_data['seller_name'] += f" ({ad_data['internal_data']['seller']['office']['name']})"
+                ad_data.size = ad_data.internal_data['property']['areaSize']
+                ad_data.description = ad_data.internal_data['description']
+                ad_data.photoUrl = ad_data.internal_data['photoUrl']
+
+                if 'seller' in ad_data.internal_data and 'name' in ad_data.internal_data['seller']:
+                    ad_data.seller_name = ad_data.internal_data['seller']['name']
+                    if 'office' in ad_data.internal_data['seller']:
+                        ad_data.seller_name += f" ({ad_data.internal_data['seller']['office']['name']})"
 
                 try:
-                    ad_data['tel_number'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0].replace(' ', '')
-                    ad_data['tel_number_pretty'] = ad_data['internal_data']['contactPhoneNumbers']['numbers'][0]
+                    ad_data.tel_number = ad_data.internal_data['contactPhoneNumbers']['numbers'][0].replace(' ', '')
+                    ad_data.tel_number_pretty = ad_data.internal_data['contactPhoneNumbers']['numbers'][0]
                 except:
                     pass
 
-                ad_data['url'] = f'https://ingatlan.com/{ad_data["internal_data"]["id"]}'
+                ad_data.url = f'https://ingatlan.com/{ad_data.internal_data["id"]}'
 
                 ads_data[(self.__class__.__name__, ad)] = ad_data
                 count += 1
