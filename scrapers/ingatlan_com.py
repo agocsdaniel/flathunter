@@ -3,26 +3,17 @@ import math
 import requests
 import json
 from sites import Site
+from scrapers.factory.property_site import PropertySite
 from bs4 import BeautifulSoup
 from config import default_headers, config, FIRST_RUN, DEBUG
 
 
-__name__ = 'Ingatlan.com'
-
-class Ingatlan_com:
-    def __init__(self, url_list=None):
-        if url_list is None:
-            url_list = []
-        self.url_list = url_list
-
+class Ingatlan_com(PropertySite):
     @staticmethod
     def is_valid_url(url) -> bool:
         return url.startswith('https://ingatlan.com/lista/')
 
-    def add_url(self, url):
-        self.url_list.append(url)
-
-    def scrape(self, notifier_callback=None, mark_seen_callback=None):
+    def _scrape(self, notifier_callback=None, mark_seen_callback=None):
         ads = []
         ads_data = {}
         url_no = 0

@@ -4,28 +4,21 @@ import requests
 import json
 import re
 from sites import Site
+from scrapers.factory.property_site import PropertySite
 from bs4 import BeautifulSoup
 from config import default_headers, config, FIRST_RUN, DEBUG
 
 
-class Ingatlan_jofogas_hu:
+class Ingatlan_jofogas_hu(PropertySite):
     api_headers = default_headers | {
         'api_key': 'jofogas-web-eFRv9myucHjnXFbj'
     }
-
-    def __init__(self, url_list=None):
-        if url_list is None:
-            url_list = []
-        self.url_list = url_list
 
     @staticmethod
     def is_valid_url(url) -> bool:
         return url.startswith('https://ingatlan.jofogas.hu/')
 
-    def add_url(self, url):
-        self.url_list.append(url)
-
-    def scrape(self, notifier_callback=None, mark_seen_callback=None):
+    def _scrape(self, notifier_callback=None, mark_seen_callback=None):
         ads = {}
         url_no = 0
 
@@ -37,6 +30,8 @@ class Ingatlan_jofogas_hu:
 
             while page < max_page or page == 0:
                 doc = requests.get(url + '&o=' + str(page + 1), headers=default_headers).content.decode('iso-8859-2').split('\n')
+                data = None
+                result_count = 0
                 for line in doc:
                     if line.startswith('acmh_items'):
                         data = json.loads(('[' + line.strip().split('[', maxsplit=1)[1][0:-2]).encode('iso-8859-2').decode('unicode_escape'))
@@ -64,7 +59,7 @@ class Ingatlan_jofogas_hu:
             unseen_ads = unseen_ads[0:1]
 
         for ad in unseen_ads:
-            ad_data = ads[(self.__class__.__name__, ad)]
+            ad_data = ads.get((self.__class__.__name__, ad))
 
             if not FIRST_RUN:
                 doc = requests.get(f'https://ingatlan.jofogas.hu/{ad_data["region"]}/{ad}.htm', headers=default_headers).content
@@ -91,9 +86,6 @@ class Ingatlan_jofogas_hu:
                 if notifier_callback:
                     if notifier_callback(ad_data, key=(self.__class__.__name__, ad)):
                         mark_seen_callback((self.__class__.__name__, ad), ad_data)
-
-            else:
-                mark_seen_callback((self.__class__.__name__, ad), ad_data)
 
             ads_data[(self.__class__.__name__, ad)] = ad_data
 
