@@ -61,13 +61,13 @@ class Ingatlan_jofogas_hu(PropertySite):
 
         for ad in unseen_ads:
             ad_raw = ads.get((self.__class__.__name__, ad))
+            ad_data = Ad()
+            ad_data.internal_data = ad_raw
 
             if not FIRST_RUN:
                 doc = requests.get(f'https://ingatlan.jofogas.hu/{ad_raw["region"]}/{ad}.htm', headers=default_headers).content
 
                 doc = BeautifulSoup(doc, 'html.parser')
-                ad_data = Ad()
-                ad_data.internal_data = ad_raw
                 ad_data.title = doc.find(property='og:title').attrs['content']
                 ad_data.description = doc.find(property='og:description').attrs['content'][6:].lstrip(ad_data.title)[2:]
                 ad_data.photoUrl = doc.find(property='og:image').attrs['content']
