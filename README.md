@@ -8,6 +8,7 @@ I use [Gotify](https://github.com/gotify/server) for notifications
 
 * [ingatlan.com](https://ingatlan.com)
 * [ingatlan.jofogas.hu](https://ingatlan.jofogas.hu)
+* [athome.lu](https://www.athome.lu)
 
 ### How to run it
 
@@ -22,5 +23,5 @@ For the first run you might define `FIRST_RUN=True` in the .env. Using this the 
 
 ### Final notes
 
-Please do not abuse ingatlan.com with this script!
+Please do not abuse property sites with this script!
 (For example: scraping within just seconds.)

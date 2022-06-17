@@ -25,6 +25,9 @@ class Gotify:
             message += f"{ad_data.description}\n\n"
 
             message += "##### \n"
+                
+            if ad_data.geo.lat != ad_data.geo.UNSET and ad_data.geo.UNSET:
+                message += f"**📍 [{ad_data.geo.address}]({ad_data.geo.map_url})**  \n"
 
             if ad_data.seller_name is not None:
                 message += f"**👤 {ad_data.seller_name}**  \n"

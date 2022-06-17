@@ -10,6 +10,17 @@ class _Prettifiable:
     def __str__(self):
         return self.value
 
+class _Geo:
+    UNSET = 1000.0
+    
+    def __init__(self):
+        self.lat = 1000.0
+        self.lon = 1000.0
+        self.address = 'Ismeretlen cím'
+    
+    @property
+    def map_url(self):
+        return f'https://www.google.com/maps?q={str(self.lat)}%2C{str(self.lon)}&z=12'
 
 class Ad:
     title = None
@@ -17,10 +28,11 @@ class Ad:
     description = None
     photoUrl = None
     url = None
-    _price = _Prettifiable('N/A', '{} Ft')
     currency = 'Ft'
-    _rooms = _Prettifiable('N/A', '{} szoba')
-    _size = _Prettifiable('N/A', '{} m²')
+    _price = 'N/A'
+    _rooms = 'N/A'
+    _size = 'N/A'
+    geo = _Geo()
     address = None
     seller_name = None
     tel_number = None
